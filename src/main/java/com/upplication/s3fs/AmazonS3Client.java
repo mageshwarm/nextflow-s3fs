@@ -121,6 +121,18 @@ public class AmazonS3Client {
 		}
 		return client.putObject(req);
 	}
+
+	/**
+	 *
+	 */
+	public PutObjectResult putObject(PutObjectRequest request) {
+		if( cannedAcl != null ) {
+			log.trace("Setting canned ACL={}; bucket={}; key={}", cannedAcl, request.getBucketName(), request.getKey());
+			request.withCannedAcl(cannedAcl);
+		}
+		return client.putObject(request);
+	}
+
 	/**
 	 * @see com.amazonaws.services.s3.AmazonS3Client#putObject(String, String, java.io.InputStream, ObjectMetadata)
 	 */
@@ -132,6 +144,7 @@ public class AmazonS3Client {
 		}
 		return client.putObject(req);
 	}
+
 	/**
 	 * @see com.amazonaws.services.s3.AmazonS3Client#deleteObject(String, String)
 	 */

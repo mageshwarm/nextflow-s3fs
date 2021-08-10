@@ -17,10 +17,12 @@
 
 package com.upplication.s3fs.util;
 
+import java.util.List;
 import java.util.Properties;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectId;
+import com.amazonaws.services.s3.model.SSEAlgorithm;
 import com.amazonaws.services.s3.model.StorageClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,11 @@ public class S3UploadRequest extends S3MultipartOptions<S3UploadRequest> {
     private StorageClass storageClass;
 
     /**
+     * Amazon S3 storage class to apply to the newly created S3 object, if any.
+     */
+    private String storageEncryptionKey;
+
+    /**
      * Metadata that will be attached to the stored S3 object.
      */
     private ObjectMetadata metadata;
@@ -57,6 +64,7 @@ public class S3UploadRequest extends S3MultipartOptions<S3UploadRequest> {
         super(props);
         setStorageClass(props.getProperty("upload_storage_class"));
         setStorageEncryption(props.getProperty("storage_encryption"));
+        setStorageEncryptionKey(props.getProperty("storage_encryption_key"));
     }
 
     public S3ObjectId getObjectId() {
@@ -66,6 +74,8 @@ public class S3UploadRequest extends S3MultipartOptions<S3UploadRequest> {
     public StorageClass getStorageClass() {
         return storageClass;
     }
+
+    public String getStorageEncryptionKey() { return storageEncryptionKey; }
 
     public ObjectMetadata getMetadata() {
         return metadata;
@@ -98,15 +108,25 @@ public class S3UploadRequest extends S3MultipartOptions<S3UploadRequest> {
     public S3UploadRequest setStorageEncryption(String storageEncryption) {
         if( storageEncryption == null) {
             return this;
-        }
-        else if (!"AES256".equals(storageEncryption)) {
-            log.warn("Not a valid S3 server-side encryption type: `{}` -- Currently only AES256 is supported",storageEncryption);
-        }
-        else {
+        } else if(CommonUtils.isAES256Enabled(storageEncryption)) {
             ObjectMetadata objectMetadata = new ObjectMetadata();
-            objectMetadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+            objectMetadata.setSSEAlgorithm(SSEAlgorithm.AES256.getAlgorithm());
             this.setMetadata(objectMetadata);
+        } else if(CommonUtils.isAES256Enabled(storageEncryption)) {
+            ObjectMetadata objectMetadata = new ObjectMetadata();
+            objectMetadata.setSSEAlgorithm(SSEAlgorithm.KMS.getAlgorithm());
+            this.setMetadata(objectMetadata);
+        } else {
+            log.warn("Not a valid S3 server-side encryption type: `{}` -- Currently only AES256 or aws:kms is supported", storageEncryption);
         }
+        return this;
+    }
+
+    public S3UploadRequest setStorageEncryptionKey(String storageEncryptionKey) {
+        if( storageEncryptionKey == null) {
+            return this;
+        }
+        this.storageEncryptionKey = storageEncryptionKey;
         return this;
     }
 
@@ -119,6 +139,7 @@ public class S3UploadRequest extends S3MultipartOptions<S3UploadRequest> {
         return "objectId=" + objectId +
                 "storageClass=" + storageClass +
                 "metadata=" + metadata +
+                "storageEncryptionKey=" + storageEncryptionKey +
                 super.toString();
     }
 

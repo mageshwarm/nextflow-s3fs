@@ -46,10 +46,12 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectId;
+import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.StorageClass;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.util.Base64;
 import com.upplication.s3fs.util.ByteBufferInputStream;
+import com.upplication.s3fs.util.CommonUtils;
 import com.upplication.s3fs.util.S3UploadRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,6 +112,11 @@ public final class S3OutputStream extends OutputStream {
      * Amazon S3 storage class to apply to the newly created S3 object, if any.
      */
     private final StorageClass storageClass;
+
+    /**
+     * Amazon S3 storage class to apply to the newly created S3 object, if any.
+     */
+    private final String storageEncryptionKey;
 
     /**
      * Metadata that will be attached to the stored S3 object.
@@ -198,6 +205,7 @@ public final class S3OutputStream extends OutputStream {
         this.storageClass = request.getStorageClass();
         this.request = request;
         this.chunkSize = request.getChunkSize();
+        this.storageEncryptionKey = request.getStorageEncryptionKey();
     }
 
     private ByteBuffer expandBuffer(ByteBuffer byteBuffer) {
@@ -407,6 +415,10 @@ public final class S3OutputStream extends OutputStream {
             request.setStorageClass(storageClass);
         }
 
+        if(CommonUtils.isValidString(storageEncryptionKey)) {
+            request.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(storageEncryptionKey));
+        }
+
         if( cannedAcl != null ) {
             log.debug("Setting canned ACL={}; initiateMultipartUpload bucket={}, key={}", cannedAcl, objectId.getBucket(), objectId.getKey());
             request.withCannedACL(cannedAcl);
@@ -476,6 +488,7 @@ public final class S3OutputStream extends OutputStream {
         request.setInputStream(content);
         request.setLastPart(lastPart);
         request.setMd5Digest(Base64.encodeAsString(checksum));
+
 
         final PartETag partETag = s3.uploadPart(request).getPartETag();
         log.trace("Uploaded part {} with length {} for {}: {}", partETag.getPartNumber(), contentLength, objectId, partETag.getETag());
@@ -564,6 +577,10 @@ public final class S3OutputStream extends OutputStream {
 
         if (storageClass != null) {
             request.setStorageClass(storageClass);
+        }
+
+        if(CommonUtils.isAES256Enabled(storageEncryptionKey)) {
+            request.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(storageEncryptionKey));
         }
 
         try {
