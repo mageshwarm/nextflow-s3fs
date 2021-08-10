@@ -112,7 +112,7 @@ public class S3UploadRequest extends S3MultipartOptions<S3UploadRequest> {
             ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setSSEAlgorithm(SSEAlgorithm.AES256.getAlgorithm());
             this.setMetadata(objectMetadata);
-        } else if(CommonUtils.isAES256Enabled(storageEncryption)) {
+        } else if(CommonUtils.isKMSEnabled(storageEncryption)) {
             ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setSSEAlgorithm(SSEAlgorithm.KMS.getAlgorithm());
             this.setMetadata(objectMetadata);

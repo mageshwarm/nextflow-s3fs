@@ -415,8 +415,8 @@ public final class S3OutputStream extends OutputStream {
             request.setStorageClass(storageClass);
         }
 
-        if(CommonUtils.isValidString(storageEncryptionKey)) {
-            request.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(storageEncryptionKey));
+        if(CommonUtils.isValidString(this.storageEncryptionKey)) {
+            request.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(this.storageEncryptionKey));
         }
 
         if( cannedAcl != null ) {
@@ -579,8 +579,8 @@ public final class S3OutputStream extends OutputStream {
             request.setStorageClass(storageClass);
         }
 
-        if(CommonUtils.isAES256Enabled(storageEncryptionKey)) {
-            request.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(storageEncryptionKey));
+        if(CommonUtils.isValidString(this.storageEncryptionKey)) {
+            request.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(this.storageEncryptionKey));
         }
 
         try {
